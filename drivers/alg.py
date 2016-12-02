@@ -6,7 +6,7 @@ import utils
 from interval import Interval
 DEBUG = False
 
-def RQI_step(D, U, H, mu, x, counter=None):
+def RQI_step(D, U, H, mu, x, counter=None, inertia_only=False):
     ''' Do one step of RQI
     Params:
     mu[float]: Current eigenvalue guess, also the shift to use;
@@ -23,17 +23,14 @@ def RQI_step(D, U, H, mu, x, counter=None):
         y = core.lin_solve(D_hat, G, U, x)
         n_mu = utils.inertia_ldl(D_hat)[2]
     except ValueError as e:
-        # if int(str(e)) == len(D):
-        #     print("The last D[i] is zero, actually converged")
-        #     error = utils.comp_error(D, U, H, mu, x)
-        #     print("mu = %e, current error = %e" % (mu, error))
-        #     return(mu, x, error, )
         if counter:
             counter.stable_count += 1.0
 
         #print("Turning to stable linear solve method.")
         y, ratio, D_hat = core.SSQR_inertia(D-mu, U, H, x)
         n_mu = utils.inertia_qr(ratio, D_hat)[2]
+    if inertia_only:
+        return n_mu
 
     lam = np.dot(x, y)
     norm = np.linalg.norm(y)
@@ -63,7 +60,7 @@ def inverse_iter(D, U, H, mu, x, eps = 1e-6):
     return mu, x, error
 
 
-def RQI_fast(D, U, H, mu, x, counter=None, eps=1e-7):
+def RQI_fast(D, U, H, mu, x, counter=None, eps=1e-7, inertia_only=False):
     try:
         result = core.ldl_fast(D-mu, U, H)
         if len(result) == len(D):
@@ -82,6 +79,9 @@ def RQI_fast(D, U, H, mu, x, counter=None, eps=1e-7):
             counter.stable_count += 1.0
         y, ratio, D_hat = core.SSQR_inertia(D-mu, U, H, x)
         n_mu = utils.inertia_qr(ratio, D_hat)[2]
+
+    if inertia_only:
+        return n_mu
 
     lam = np.dot(x, y)
     norm = np.linalg.norm(y)

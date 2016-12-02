@@ -16,7 +16,7 @@ def planerot(x):
     G = np.array([[x[0],x[1]], [-1*x[1], x[0]]])/r
     return (G, np.array([r, 0]))
 
-def inertia_qr(ratio, D_hat, tol=1e-7):
+def inertia_qr(ratio, D_hat, tol=1e-8):
     D_hat = D_hat / ratio
     neg, zero, pos = 0, 0, 0
     for d in D_hat:
@@ -28,7 +28,7 @@ def inertia_qr(ratio, D_hat, tol=1e-7):
             neg += 1
     return (pos, zero, neg)
 
-def inertia_ldl(D_hat, tol=1e-7):
+def inertia_ldl(D_hat, tol=1e-8):
     neg, zero, pos = 0, 0, 0
     for d in D_hat:
         if abs(d) < tol:

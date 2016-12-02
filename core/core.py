@@ -6,7 +6,7 @@ on a matrix of the form D + UHU^T where D is diagonal and H is small and symmetr
 TODO: Optimize subroutines in here
 '''
 
-def ldl_fast(D, U, H, eps=1e-11):
+def ldl_fast(D, U, H, eps=1e-8):
 	'''Do LDL decomposition of a symmetric matrix
 	If the matrix happens to be singular in the middle, an ValueError will be raised.
 

@@ -1,5 +1,5 @@
 from context import core, utils
-from utilities import normal_example, form_L
+from utilities import normal_example, form_L, compute_inertia
 import numpy as np
 import pytest
 
@@ -30,14 +30,52 @@ class TestLDL:
 
 	def test_ldl_inertia(self, normal_example):
 		n, r, D, U, H, A, b = normal_example
-		H = np.diag(np.random.randn(r))
-		D = np.random.rand(n) * (-1 * 5.0)
-		A = np.diag(D) + np.dot(U, np.dot(H, U.T))
-		evals, evecs = np.linalg.eig(A)
-		D_hat, G = core.ldl(D, U, H)
-		(pos, zero, neg) = utils.inertia_ldl(D_hat, G)
-		assert pos == sum([e > 0 for e in evals])
-		assert neg == sum([e < 0 for e in evals])
+		evals, _ = np.linalg.eig(A)
+		max_eval = max(evals) + 1
+		min_eval = min(evals) - 1
+		a = np.random.rand() * (max_eval - min_eval) + min_eval
+		b = np.random.rand() * (max_eval - min_eval) + min_eval
+		# Correctly compute number of evals in [a, b)
+		n1 = compute_inertia(D-a, U, H)
+		n2 = compute_inertia(D-b, U, H)
+		num_eval = 0
+		for e in evals:
+			if b > a:
+				num_eval += (e < b and e >= a)
+			else:
+				num_eval += (e < a and e >= b)
+		assert num_eval == abs(n1-n2)
+
+	def test_inertia_edge(self, normal_example):
+		n, r, D, U, H, A, b = normal_example
+		evals, _ = np.linalg.eig(A)
+		index = np.random.choice(n)
+		mu = evals[index]
+		b = min(evals) - 1
+		# Number of evals in [b, mu)
+		n_mu = compute_inertia(D-mu, U, H)
+		n_b = 0
+		num_eval = 0
+		for e in evals:
+			if e >= b and e < mu:
+				num_eval += 1
+		assert num_eval == abs(n_mu - n_b)
+
+
+	def test_inertia_stable(self, normal_example):
+		# When shift = eval, what does a small perturbation do to inertia?
+		n, r, D, U, H, A, b = normal_example
+		evals, _ = np.linalg.eig(A)
+		index = np.random.choice(n)
+		mu = evals[index]
+		n_mu = compute_inertia(D-mu, U, H)
+		EPS = 1e-8
+		perturbed = mu + EPS
+
+		n_pert = compute_inertia(D-perturbed, U, H)
+		print("mu = %.8f, perturbed = %.8f." % (mu, perturbed))
+		print("inertia for A - mu is : " + str(n_mu))
+		print("inertia for A - perturbed is : " + str(n_pert))
 
 @pytest.fixture(scope='class')
 def unstable_example(normal_example):

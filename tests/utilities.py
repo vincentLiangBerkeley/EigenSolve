@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from context import core, utils
 
 
 class Counter(object):
@@ -10,6 +11,21 @@ class Counter(object):
 
 def sanity_check(eintervals, m):
     return sum([interval.num_evals() for interval in eintervals]) == m
+
+def compute_inertia(D, U, H):
+    # Return the inertia of the matrix
+    try:
+        result = core.ldl_fast(D, U, H)
+        if len(result) == 1:
+            inertia = utils.inertia_ldl(result)
+        else:
+            D_hat, G = result
+            inertia = utils.inertia_ldl(D_hat)
+    except ValueError as e:
+        print("Turning to stable method.")
+        x, ratio, D_hat = core.SSQR_inertia(D, U, H, np.random.randn(len(D)))
+        inertia = utils.inertia_qr(ratio, D_hat)
+    return inertia
 
 def random_example(n, r, orth=True):
     '''Generate random matrix D+UHU^T'''

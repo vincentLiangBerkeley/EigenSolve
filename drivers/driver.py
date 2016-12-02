@@ -6,7 +6,7 @@ from interval import Interval, find_interval
 import output
 import numpy as np
 EPS_error = 1e-10
-EPS_bisec = 1e-10
+EPS_bisec = 1e-8
 
 def bisection_fallback(eintervals, D, U, H, x, solve=True, counter=None):
     interval = eintervals.pop()
@@ -57,7 +57,7 @@ def find_pair(eintervals, D, U, H, mu, x, verbose=True, counter=None, version=1)
             interval = find_interval(mu, eintervals)
             if interval is not None:
                 if verbose:
-                    print("mu = %.8f, n_mid = %d." % (mu, n_mid))
+                    print("mu = %.8f, n_mid = %d, n_high=%d, n_low=%d." % (mu, n_mid, interval.n_high, interval.n_low))
                     print("Working on interval (%.4f, %.4f) with %d evals." % (interval.low, interval.high, interval.num_evals()))
                 # Tests for convergence, needs to handle it better when converged
                 if new_err < EPS_error:
@@ -69,13 +69,50 @@ def find_pair(eintervals, D, U, H, mu, x, verbose=True, counter=None, version=1)
                         if interval.num_evals() > 1:
                             # Needs a better handling method for converging in interval with multiple eigenvalues
                             # Now see if new_mu is larger or smaller than mu because we know n_mid
-                            if n_mid != interval.n_low and n_mid != interval.n_high:
-                                result = interval.split(mu, n_mid)
-                            elif n_mid == interval.n_low:
-                                result = Interval(mu, n_mid, interval.high, )
+                            if n_mid == interval.n_high:
+                                boundary = mu - EPS_bisec
+                                if version == 1:
+                                    n_boundary = alg.RQI_step(D, U, H, boundary, x, counter, inertia_only=True)
+                                else:
+                                    n_boundary = alg.RQI_fast(D, U, H, boundary, x, counter, inertia_only=True)
+
+                                result = Interval(interval.low, interval.n_low, mu, n_mid)
+                                result.high = boundary
+                                result.n_high -= max(abs(n_mid-n_boundary), 1)
+                                eintervals.append(result)
+                            else:
+                                boundary = mu + EPS_bisec
+                                if version == 1:
+                                    n_boundary = alg.RQI_step(D, U, H, boundary, x, counter, inertia_only=True)
+                                else:
+                                    n_boundary = alg.RQI_fast(D, U, H, boundary, x, counter, inertia_only=True)
+
+                                if type(n_boundary) != int:
+                                    raise ValueError("n_boundary type error: %s" % type(n_boundary))
+                                if abs(n_boundary - n_mid) > 1:
+                                    raise ValueError("Multiple eigenvalues in interval: (%.8f, %.8f)"%(mu, boundary))
+                                #print("n_boundary = %d, n_mid = %d." % (n_boundary, n_mid))
+                                if n_mid == interval.n_low:
+                                    result = Interval(mu, n_mid, interval.high, interval.n_high)
+                                    result.low = boundary
+                                    result.n_low += max(abs((n_boundary-n_mid)), 1)
+                                    eintervals.append(result)
+                                else:
+                                    low_half, high_half = interval.split(mu, n_mid)
+                                    high_half.low = boundary
+                                    high_half.n_low += max(abs((n_boundary-n_mid)), 1)
+                                    eintervals.append(low_half)
+                                    if high_half.num_evals() > 0:
+                                        eintervals.append(high_half)
 
                     return (new_mu, x)
-                eintervals += interval.split(mu, n_mid)
+                try:
+                    eintervals += interval.split(mu, n_mid)
+                except ValueError as e:
+                    print e
+                    n_low = alg.RQI_fast(D, U, H, interval.low, x, counter, inertia_only = True)
+                    print("The real n_low = %d." % n_low)
+                    raise ValueError
                 # Update the next estimate
                 mu = new_mu
                 old_err = new_err
@@ -107,6 +144,6 @@ def find_pair(eintervals, D, U, H, mu, x, verbose=True, counter=None, version=1)
             if counter is not None:
                 counter.bisec_count += 1.0
             mu, x, old_err = bisection_fallback(eintervals, D, U, H, x, solve=True, counter=counter)
-        if verbose:
-            key = raw_input("Press ENTER to continue...\n") 
-            sys.stdout.flush()
+        # if verbose:
+        #     key = raw_input("Press ENTER to continue...\n") 
+        #     sys.stdout.flush()

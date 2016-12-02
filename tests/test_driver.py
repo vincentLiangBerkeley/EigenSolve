@@ -22,7 +22,7 @@ def run_driver(v, D, U, H, verbose=False):
 		RQI_iters, bisec_iters, stable = [], [], []
 		n = len(D)
 		for it in xrange(n):
-			print it, sum([interval.num_evals() for interval in eintervals])
+			#print it, sum([interval.num_evals() for interval in eintervals])
 			assert sanity_check(eintervals, n-it)
 			#print("Finding the %dth eigen pair.\n" % (it+1))
 			counter = Counter()
@@ -60,7 +60,7 @@ class TestDriver:
 		n, r, D, U, H, _, _ = normal_example
 		print("Testing driver with RQI version 1...")
 		start = time.time()
-		run_driver(1, D, U, H)
+		run_driver(1, D, U, H, verbose=False)
 		v1 = time.time() - start
 		print("\nTesting driver with RQI version 2...")
 		start = time.time()
@@ -71,8 +71,9 @@ class TestDriver:
 		n, r, D, U, H, A, b = normal_example
 		# Guess a close value to a true eigenvalue and see how interval split is performed
 		evals, evects = np.linalg.eig(A)
-		mu = evals[0]
-		x = evects[0]
+		index = np.random.choice(n)
+		mu = evals[index]
+		x = evects[index]
 		eintervals = [interval.Interval(min(evals)-1, 0, max(evals)+1, n)]
 		print("Running one step of eigen solve...")
 		lamb, y = driver.find_pair(eintervals,D, U, H, mu, x, version=1)
