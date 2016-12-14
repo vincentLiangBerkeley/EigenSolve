@@ -1,4 +1,4 @@
-from context import alg, utils
+from context import alg, utils, core
 from utilities import normal_example
 import numpy as np
 
@@ -21,10 +21,13 @@ class TestRQI:
 		mu = np.dot(b.T, np.dot(A, b))
 		for i in range(10):
 			mu, b, error, n_mid = alg.RQI_step(D, U, H, mu, b)
+			print error
 			if error < 1e-10:
 				print("Converged in %d iterations." % (i+1))
 				break
-
+		D_hat = core.ldl_fast(D-mu, U, H)
+		inertia = utils.inertia_ldl(D_hat)
+		print inertia
 		assert np.allclose(np.dot(A, b), mu*b)
 
 	def test_rqi_fast_converge(self, normal_example):
@@ -41,6 +44,10 @@ class TestRQI:
 			if ratio < 1e-8:
 				print("Converged in %d iterations." %(i+1))
 				break
+
+		D_hat = core.ldl_fast(D-mu, U, H)
+		inertia = utils.inertia_ldl(D_hat)
+		print inertia
 
 class TestBisec:
 	def test_bisec_step(self, normal_example):
@@ -73,3 +80,8 @@ class TestBisec:
 				high = mid
 		print("Converged in %d steps with mu=%.4f." % (i, mid))
 		assert np.allclose(np.dot(A, x), mid*x)
+
+	def test_eig(self, normal_example):
+		n, r, D, U, H, A, b = normal_example
+		print("n = %d" % n)
+		evals, evecs = np.linalg.eig(A)

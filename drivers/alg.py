@@ -36,6 +36,7 @@ def RQI_step(D, U, H, mu, x, counter=None, inertia_only=False):
     norm = np.linalg.norm(y)
 
     new_mu = mu + lam/norm**2
+    #error = np.linalg.norm(x - lam/norm**2 *y)
     y = y / norm
     error = utils.comp_error(D, U, H, new_mu, y)
     return (new_mu, y, error, n_mu)
@@ -59,16 +60,23 @@ def inverse_iter(D, U, H, mu, x, eps = 1e-6):
         print("Final error = %e." % (error))
     return mu, x, error
 
-
 def RQI_fast(D, U, H, mu, x, counter=None, eps=1e-7, inertia_only=False):
+    if counter is not None:
+        counter.rqi_count += 1
     try:
         result = core.ldl_fast(D-mu, U, H)
         if len(result) == len(D):
             # Only D_hat is returned, meaning eigen-pair found
-            error = utils.comp_error(D, U, H, mu, x)
-            if error > 1e-12:
-                mu, x, error = inverse_iter(D, U, H, mu, x, eps)
             n_mu = utils.inertia_ldl(result)[2]
+            if inertia_only:
+                return n_mu
+
+            error = utils.comp_error(D, U, H, mu, x)
+            #raise ValueError("Eval converged but error = %e." % error)
+            if error > 1e-12:
+                counter.inverse_count += 1
+                mu, x, error = inverse_iter(D, U, H, mu, x, eps)
+            
             return (mu, x, error, n_mu)
         else:
             D_hat, G = result

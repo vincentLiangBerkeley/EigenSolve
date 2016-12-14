@@ -8,6 +8,7 @@ class Counter(object):
         self.bisec_count = bisec_count
         self.rqi_count = rqi_count
         self.stable_count = stable_count
+        self.inverse_count = 0
 
 def sanity_check(eintervals, m):
     return sum([interval.num_evals() for interval in eintervals]) == m

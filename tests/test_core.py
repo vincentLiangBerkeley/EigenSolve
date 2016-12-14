@@ -2,7 +2,7 @@ from context import core, utils
 from utilities import normal_example, form_L, compute_inertia
 import numpy as np
 import pytest
-
+import time
 class TestLDL:
 	def test_ldl_normal(self, normal_example):
 		n, r, D, U, H, A, b = normal_example
@@ -23,9 +23,13 @@ class TestLDL:
 		
 	def test_lin_solve(self, normal_example):
 		n, r, D, U, H, A, b = normal_example
+		start = time.time()
 		D_hat, G = core.ldl(D, U, H)
 		x = core.lin_solve(D_hat, G, U, b)
+		t1 = time.time()
 		x_hat = np.linalg.solve(A, b)
+		t2 = time.time()
+		print("My solution subroutine costs %.4f sec, np costs %.4fsec." % (t1-start, t2-t1))
 		assert np.allclose(x, x_hat)
 
 	def test_ldl_inertia(self, normal_example):

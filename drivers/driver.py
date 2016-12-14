@@ -61,6 +61,11 @@ def find_pair(eintervals, D, U, H, mu, x, verbose=True, counter=None, version=1)
                     print("Working on interval (%.4f, %.4f) with %d evals." % (interval.low, interval.high, interval.num_evals()))
                 # Tests for convergence, needs to handle it better when converged
                 if new_err < EPS_error:
+                    result = core.ldl_fast(D-new_mu, U, H)
+                    if len(result) == 2:
+                        raise ValueError("new_mu = %e is not a real eigenvalue." % new_mu)
+                    inertia = utils.inertia_ldl(result)
+                    assert inertia[1] == 1
                     if verbose:
                         print("RQI Converged in: ")
                     if new_mu in interval:
@@ -104,6 +109,9 @@ def find_pair(eintervals, D, U, H, mu, x, verbose=True, counter=None, version=1)
                                     eintervals.append(low_half)
                                     if high_half.num_evals() > 0:
                                         eintervals.append(high_half)
+                    else:
+                        output.display_interval(interval)
+                        raise ValueError("Eigenvalue %.8f does not converge in the interval ..." % new_mu)
 
                     return (new_mu, x)
                 try:
