@@ -19,7 +19,7 @@ def run_driver(v, D, U, H, verbose=False):
 
 		evals, evects = [], []
 		
-		RQI_iters, bisec_iters, stable, inverse = [], [], [], []
+		RQI_iters, bisec_iters, stable, inverse, solve_count = [], [], [], [], []
 		n = len(D)
 		for it in xrange(n):
 			#print it, sum([interval.num_evals() for interval in eintervals])
@@ -39,6 +39,7 @@ def run_driver(v, D, U, H, verbose=False):
 			bisec_iters.append(counter.bisec_count)
 			stable.append(counter.stable_count)
 			inverse.append(counter.inverse_count)
+			solve_count.append(counter.solve_count)
 
 			if it != n - 1:
 				mu = (eintervals[0].low + eintervals[0].high) / 2
@@ -56,6 +57,7 @@ def run_driver(v, D, U, H, verbose=False):
 		print("Ave number of RQI iterations = %.2f, that of bisection = %.2f." % (np.mean(RQI_iters), np.mean(bisec_iters)))
 		print("Tol number of inverse iterations = %d." % sum(inverse))
 		print("The total number of stable QR method is %d." % (sum(stable)))
+		print("The total number of bisection that need solve is %d." % sum(solve_count))
 
 		A = form_A(D, U, H)
 		for i in xrange(n):

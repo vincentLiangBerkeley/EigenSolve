@@ -32,6 +32,14 @@ class TestLDL:
 		print("My solution subroutine costs %.4f sec, np costs %.4fsec." % (t1-start, t2-t1))
 		assert np.allclose(x, x_hat)
 
+	def test_lin_solve_without_last_entry(self, normal_example):
+		n, r, D, U, H, A, b = normal_example
+		D_hat, G = core.ldl_fast(D, U, H)
+		x = core.lin_solve(D_hat, G, U, b)
+		G[-1, :] = 0
+		x_hat = core.lin_solve(D_hat, G, U, b)
+		print np.linalg.norm(x-x_hat)
+
 	def test_ldl_inertia(self, normal_example):
 		n, r, D, U, H, A, b = normal_example
 		evals, _ = np.linalg.eig(A)

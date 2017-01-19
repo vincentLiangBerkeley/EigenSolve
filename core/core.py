@@ -163,6 +163,9 @@ def lin_solve(D_hat, G, U, b):
     
 	Returns:
 	x[np.array]: result of the linear solve
+
+	NOTE: The last row of G is not used actually, so we can still solve the system if the 
+	last entry of D_hat is zero, where the last row of G will be zero.
 	'''
     # Forward solve
 	n = len(b)
@@ -173,7 +176,9 @@ def lin_solve(D_hat, G, U, b):
 	for i in range(n):
 		y[i] = b_copy[i]
 		b_copy[i+1:] -= y[i]*np.dot(U[i+1:, :], G[i, :].T)
-	y = y / D_hat
+	y[:-1] = y[:-1] / D_hat[:-1]
+	if D_hat[-1] != 0:
+		y[-1] = y[-1] / D_hat[-1]
 	
 	# Backward solve LTx = y
 	for i in range(n-1, -1, -1):

@@ -73,6 +73,8 @@ def RQI_fast(D, U, H, mu, x, counter=None, eps=1e-7, inertia_only=False):
 
             error = utils.comp_error(D, U, H, mu, x)
             #raise ValueError("Eval converged but error = %e." % error)
+            '''Use inverse iteration to find eigenvector when eigenvalue is found
+            Instead, lin_solve can be used to find eigenvector.'''
             if error > 1e-12:
                 counter.inverse_count += 1
                 mu, x, error = inverse_iter(D, U, H, mu, x, eps)
