@@ -25,6 +25,7 @@ def ldl_fast(D, U, H, eps=1e-8):
 		diagonal entries in LDL decomposition
 	G : numpy.ndarray
 		A matrix storing information such that L = G*U
+	Bool: True means eigenvalue found, false means not.
 	'''
 	n, r = U.shape
 	G = np.zeros((n, r))
@@ -36,14 +37,14 @@ def ldl_fast(D, U, H, eps=1e-8):
 		if abs(D_hat[i]) < eps:
 			# Have to change so that if i == n-1, need to return instead of raising error
 			if i == n - 1:
-				return D_hat
+				return (D_hat, G, True)
 			else:
 				raise ValueError('%d' % (i+1))
 		G[i, :] = g.T / D_hat[i]
 		H = H - np.outer(g, G[i, :])
-	return (D_hat, G)
+	return (D_hat, G, False)
 
-def ldl(D, U, H, eps=1e-11):
+def ldl(D, U, H, eps=1e-8):
 	n, r = U.shape
 	G = np.zeros((n, r))
 	D_hat = np.zeros(n)
@@ -56,6 +57,7 @@ def ldl(D, U, H, eps=1e-11):
 			raise ValueError('%d' % (i+1))
 		G[i, :] = g.T / D_hat[i]
 		H = H - np.outer(g, G[i, :])
+		#H = (H + H.T) / 2
 	return (D_hat, G)
 
 def SSQR(D, U, H, b):

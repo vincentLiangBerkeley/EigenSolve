@@ -8,6 +8,8 @@ class TestLDL:
 		n, r, D, U, H, A, b = normal_example
 		D_hat, G = core.ldl(D, U, H)
 		L = form_L(D_hat, G, U)
+		print A
+		print np.dot(L, np.dot(np.diag(D_hat), L.T))
 		assert np.allclose(A, np.dot(L, np.dot(np.diag(D_hat), L.T)))	
 
 	def test_ldl_except(self, normal_example):
@@ -19,6 +21,7 @@ class TestLDL:
 		D_hat = D - evals[index]
 		A_hat = A - np.eye(n) * evals[index]
 		result = core.ldl(D_hat, U, H)
+		print result
 		assert len(result) == n
 		
 	def test_lin_solve(self, normal_example):
@@ -39,6 +42,18 @@ class TestLDL:
 		G[-1, :] = 0
 		x_hat = core.lin_solve(D_hat, G, U, b)
 		print np.linalg.norm(x-x_hat)
+
+	def test_evec_with_eval(self, normal_example):
+		n, r, D, U, H, A, b = normal_example
+		evals, evecs = np.linalg.eig(A)
+		index = np.random.randint(n)
+		D_hat = D - evals[index]
+		A_hat = A - np.eye(n) * evals[index]
+		D_hat, G, status = core.ldl_fast(D_hat, U, H)
+		assert status is True
+		b = np.zeros(n)
+		x = core.lin_solve(D_hat, G, U, b)
+		assert np.allclose(np.dot(A_hat, x), evals[index]*x)
 
 	def test_ldl_inertia(self, normal_example):
 		n, r, D, U, H, A, b = normal_example
